@@ -15,11 +15,11 @@ namespace GameServer
             packets = new Dictionary<int, Packet_>()
             {
                 { (int)ClientPackets.CRequestRoomsList, HandleRequestRoomsList},
-                { (int)ClientPackets.CCreateNewRoom, HandleCreateNewRoom}
+                { (int)ClientPackets.CCreateRoom, HandleCreateRoom}
             };
         }
 
-        private static void HandleCreateNewRoom(int index, byte[] data)
+        private static void HandleCreateRoom(int index, byte[] data)
         {
             PacketBuffer receivedBuffer = new PacketBuffer();
             receivedBuffer.WriteBytes(data);

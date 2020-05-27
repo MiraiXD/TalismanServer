@@ -14,6 +14,6 @@ namespace Bindings
     public enum ClientPackets
     {
         CRequestRoomsList = 1,
-        CCreateNewRoom = 2
+        CCreateRoom = 2
     }
 }

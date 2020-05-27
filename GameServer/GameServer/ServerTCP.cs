@@ -14,7 +14,14 @@ namespace GameServer
         public static List<GameRoom> gameRooms { get; private set; }
         public static void SetupServer()
         {            
-            gameRooms = new List<GameRoom>();            
+            gameRooms = new List<GameRoom>();
+            gameRooms.Add(new GameRoom(0, "11", 2));
+            gameRooms.Add(new GameRoom(6, "121", 2));
+            gameRooms.Add(new GameRoom(1, "11f", 2));
+            gameRooms.Add(new GameRoom(6, "1fsafas1", 2));
+            gameRooms.Add(new GameRoom(2, "1sa1", 2));
+            gameRooms.Add(new GameRoom(3, "1s1", 2));
+
             for (int i = 0; i < Constants.MAX_PLAYERS; i++)
             {
                 _clients[i] = new Client();
