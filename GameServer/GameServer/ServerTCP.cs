@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using Bindings;
+using Newtonsoft.Json;
 namespace GameServer
 {
     class ServerTCP
@@ -13,9 +14,9 @@ namespace GameServer
         private static Client[] _clients = new Client[Constants.MAX_PLAYERS];
         public static List<GameRoom> gameRooms { get; private set; }
         public static void SetupServer()
-        {            
+        {
             gameRooms = new List<GameRoom>();
-            gameRooms.Add(new GameRoom(0, "11", 2));
+            gameRooms.Add(new GameRoom(0, "11", 20));
             gameRooms.Add(new GameRoom(6, "121", 2));
             gameRooms.Add(new GameRoom(1, "11f", 2));
             gameRooms.Add(new GameRoom(6, "1fsafas1", 2));
@@ -73,9 +74,65 @@ namespace GameServer
             buffer.Dispose();
         }
 
-        public static void CreateRoom(Request.CreateRoom request)
+        public static void CreateRoom(int index, string name, int maxPlayers)
         {
+            
+        }
+        public static void JoinRoom(int index, string playerName,GameRoom gameRoom)
+        {
+            bool success = false;
+            string message = "No such room";
+            GameRoom room = null;
+            foreach (GameRoom r in gameRooms)
+            {
+                if (gameRoom.name == r.name)
+                {                    
+                    if (r.IsFull())
+                    {
+                        success = false;
+                        message = "Room is full";
+                    }
+                    else
+                    {                        
+                        r.AddPlayer(new Player(index, playerName));
+                        success = true;
+                    }
+                    room = r;
+                    break;
+                }
+            }
+            ServerResponds.RequestResult<ClientRequests.JoinRoom> result = new ServerResponds.RequestResult<ClientRequests.JoinRoom>(null, success, ClientPackets.CJoinRoom, success ? null : message, room);
+            SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result));
+        }
+        public static void SendString(int index, ServerPackets packetID, string msg = null)
+        {
+            PacketBuffer buffer = new PacketBuffer();
+            buffer.WriteInteger((int)packetID);
+            if (msg != null)
+                buffer.WriteString(msg);
 
+            SendDataTo(index, buffer.ToArray());
+            buffer.Dispose();
+        }
+        public static string GetString(byte[] data)
+        {
+            PacketBuffer buffer = new PacketBuffer();
+            buffer.WriteBytes(data);
+            buffer.ReadInteger();
+            string msg = buffer.ReadString();
+            buffer.Dispose();
+            return msg;
+        }
+        public static T GetData<T>(byte[] data)
+        {
+            string msg = GetString(data);
+            T obj = default;
+            try
+            {
+                obj = JsonConvert.DeserializeObject<T>(msg);
+            }
+            catch (Exception e) { Console.WriteLine(e.StackTrace); }
+            return obj;
         }
     }
 

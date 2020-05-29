@@ -15,34 +15,37 @@ namespace GameServer
             packets = new Dictionary<int, Packet_>()
             {
                 { (int)ClientPackets.CRequestRoomsList, HandleRequestRoomsList},
-                { (int)ClientPackets.CCreateRoom, HandleCreateRoom}
+                { (int)ClientPackets.CCreateRoom, HandleCreateRoom},
+                { (int)ClientPackets.CJoinRoom, HandleJoinRoom}
             };
+        }
+
+        private static void HandleJoinRoom(int index, byte[] data)
+        {
+            ClientRequests.JoinRoom request = ServerTCP.GetData<ClientRequests.JoinRoom>(data);
+            ServerTCP.JoinRoom(index,request.playerName,request.gameRoom);
         }
 
         private static void HandleCreateRoom(int index, byte[] data)
         {
-            PacketBuffer receivedBuffer = new PacketBuffer();
-            receivedBuffer.WriteBytes(data);
-            receivedBuffer.ReadInteger();
-            string msg = receivedBuffer.ReadString();
-            receivedBuffer.Dispose();
-            Request.CreateRoom request = JsonConvert.DeserializeObject<Request.CreateRoom>(msg);
-            ServerTCP.CreateRoom(request);
+            //PacketBuffer receivedBuffer = new PacketBuffer();
+            //receivedBuffer.WriteBytes(data);
+            //receivedBuffer.ReadInteger();
+            //string msg = receivedBuffer.ReadString();
+            //receivedBuffer.Dispose();
+            //string msg = ServerTCP.GetString(data);
+            //Request.CreateRoom request = JsonConvert.DeserializeObject<Request.CreateRoom>(msg);
+            ClientRequests.CreateRoom request = ServerTCP.GetData<ClientRequests.CreateRoom>(data);
+            ServerTCP.CreateRoom(index,request.name, request.maxPlayers);
         }
 
         private static void HandleRequestRoomsList(int index, byte[] data)
         {
-            //PacketBuffer buffer = new PacketBuffer();
-            //buffer.WriteBytes(data);
-            //buffer.ReadInteger();
-            //string msg = buffer.ReadString();
-            //buffer.Dispose();
-            PacketBuffer sendBuffer = new PacketBuffer();
-            sendBuffer.WriteInteger((int)ServerPackets.SReplyRoomsList);
-            sendBuffer.WriteString(JsonConvert.SerializeObject(ServerTCP.gameRooms));
-            
-            // ADD YOUR CODE YOU WANT TO EXEC HERE
-            ServerTCP.SendDataTo(index, sendBuffer.ToArray());
+            ServerTCP.SendString(index, ServerPackets.SReplyRoomsList,JsonConvert.SerializeObject(ServerTCP.gameRooms));
+            //PacketBuffer sendBuffer = new PacketBuffer();
+            //sendBuffer.WriteInteger((int)ServerPackets.SReplyRoomsList);
+            //sendBuffer.WriteString(JsonConvert.SerializeObject(ServerTCP.gameRooms));                   
+            //ServerTCP.SendDataTo(index, sendBuffer.ToArray());
             Console.WriteLine("Sending rooms list");
         }
 

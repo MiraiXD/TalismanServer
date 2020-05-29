@@ -9,19 +9,41 @@ namespace Bindings
         public int id { get; set; }
         public string name { get; set; }
         public int maxPlayers { get; set; }
-        public List<int> clients { get; set; }
+        public List<Player> players { get; set; }
 
         public GameRoom(int id, string name, int maxPlayers)
         {
             this.id = id;
             this.name = name;
             this.maxPlayers = maxPlayers;
-            clients = new List<int>();
+            players = new List<Player>();
         }
-        public void AddClient(int index)
+        public void AddPlayer(Player player)
         {
-            clients.Add(index);
+            players.Add(player);
+        }
+        public bool IsFull()
+        {
+            return players.Count >= maxPlayers;
         }
     }
+    public class Player
+    {
+        public Player(int clientIndex, string name)
+        {
+            this.clientIndex = clientIndex;
+            this.name = name;
+        }
 
+        public int clientIndex { get; set; }
+        public string name { get; set; }
+        public Character character { get; set; }
+    }
+    public class Character
+    {
+        public int health { get; set; }
+        public int strength { get; set; }
+        public int power { get; set; }
+
+    }
 }

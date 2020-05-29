@@ -7,13 +7,15 @@ namespace Bindings
     // gets sent from server to client
     public enum ServerPackets
     {
-        SConnectionOK = 1,
-        SReplyRoomsList = 2
+        SConnectionOK,
+        SReplyRoomsList,        
+        SRequestResult
     }
     // gets sent from client to server
     public enum ClientPackets
     {
-        CRequestRoomsList = 1,
-        CCreateRoom = 2
+        CRequestRoomsList,
+        CCreateRoom,
+        CJoinRoom
     }
 }
