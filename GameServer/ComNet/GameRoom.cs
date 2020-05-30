@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace Bindings
-{    
-    [System.Serializable]
+{        
     public class GameRoom
     {
         public int id { get; set; }
@@ -27,8 +26,7 @@ namespace Bindings
         {
             return players.Count >= maxPlayers;
         }
-    }
-    [System.Serializable]
+    }    
     public class Player
     {
         public Player(int clientIndex, string name)
@@ -40,8 +38,7 @@ namespace Bindings
         public int clientIndex { get; set; }
         public string name { get; set; }
         public Character character { get; set; }
-    }
-    [System.Serializable]
+    } 
     public class Character
     {
         public int health { get; set; }

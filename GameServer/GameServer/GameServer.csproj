@@ -57,6 +57,11 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <Import Project="..\Bindings\Bindings.projitems" Label="Shared" />
+  <ItemGroup>
+    <ProjectReference Include="..\ComNet\ComNet.csproj">
+      <Project>{660C659C-B07A-49AF-80B0-C085AA30E525}</Project>
+      <Name>ComNet</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

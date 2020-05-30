@@ -10,7 +10,7 @@ namespace GameServer
     {
         private static Socket _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private static byte[] buffer = new byte[1024];
-
+        private static JsonSerializerSettings settings = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
         private static Client[] _clients = new Client[Constants.MAX_PLAYERS];
         public static List<GameRoom> gameRooms { get; private set; }
         public static void SetupServer()
@@ -22,7 +22,7 @@ namespace GameServer
             gameRooms.Add(new GameRoom(6, "1fsafas1", 2));
             gameRooms.Add(new GameRoom(2, "1sa1", 2));
             gameRooms.Add(new GameRoom(3, "1s1", 2));
-
+            
             for (int i = 0; i < Constants.MAX_PLAYERS; i++)
             {
                 _clients[i] = new Client();
@@ -73,7 +73,10 @@ namespace GameServer
             SendDataTo(index, buffer.ToArray());
             buffer.Dispose();
         }
-
+        public static void SendRoomsList(int index)
+        {
+            SendString(index, ServerPackets.SReplyRoomsList, JsonConvert.SerializeObject(gameRooms, settings));
+        }
         public static void CreateRoom(int index, string name, int maxPlayers)
         {
             
@@ -101,8 +104,8 @@ namespace GameServer
                     break;
                 }
             }
-            ServerResponds.RequestResult<ClientRequests.JoinRoom> result = new ServerResponds.RequestResult<ClientRequests.JoinRoom>(null, success, ClientPackets.CJoinRoom, success ? null : message, room);
-            SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result));
+            ServerResponds.RequestResult<ClientRequests.JoinRoom> result = new ServerResponds.RequestResult<ClientRequests.JoinRoom>(success, ClientPackets.CJoinRoom, success ? null : message, room);
+            SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result, settings));
         }
         public static void SendString(int index, ServerPackets packetID, string msg = null)
         {
@@ -129,7 +132,8 @@ namespace GameServer
             T obj = default;
             try
             {
-                obj = JsonConvert.DeserializeObject<T>(msg);
+                JsonSerializerSettings settings = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+                obj = JsonConvert.DeserializeObject<T>(msg, settings);
             }
             catch (Exception e) { Console.WriteLine(e.StackTrace); }
             return obj;

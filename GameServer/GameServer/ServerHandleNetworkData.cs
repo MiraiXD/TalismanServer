@@ -41,11 +41,7 @@ namespace GameServer
 
         private static void HandleRequestRoomsList(int index, byte[] data)
         {
-            ServerTCP.SendString(index, ServerPackets.SReplyRoomsList,JsonConvert.SerializeObject(ServerTCP.gameRooms));
-            //PacketBuffer sendBuffer = new PacketBuffer();
-            //sendBuffer.WriteInteger((int)ServerPackets.SReplyRoomsList);
-            //sendBuffer.WriteString(JsonConvert.SerializeObject(ServerTCP.gameRooms));                   
-            //ServerTCP.SendDataTo(index, sendBuffer.ToArray());
+            ServerTCP.SendRoomsList(index);           
             Console.WriteLine("Sending rooms list");
         }
 
