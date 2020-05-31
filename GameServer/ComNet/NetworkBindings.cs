@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Bindings
+namespace ComNet
 {
     public class Constants
     {
@@ -13,13 +13,16 @@ namespace Bindings
     {
         SConnectionOK,
         SReplyRoomsList,
-        SRequestResult
+        SRequestResult,
+        SCharacterAssignment,
+        PlayerTurn,
     }
     // gets sent from client to server
     public enum ClientPackets
     {
         CRequestRoomsList,
         CCreateRoom,
-        CJoinRoom
+        CJoinRoom,
+        CGameReady
     }
 }

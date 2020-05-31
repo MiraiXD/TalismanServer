@@ -2,27 +2,27 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Bindings
+namespace ComNet
 {    
     public class ServerResponds
     { 
         public class RequestResult
         {
-            public RequestResult(bool success, ClientPackets packetID, string message = null, object obj = null)
+            public RequestResult(bool success, object obj = null, string message = null)
             {
                 this.success = success;
-                this.packetID = packetID;
+               // this.packetID = packetID;
                 this.message = message;
                 this.obj = obj;
             }
             public bool success { get; set; }
-            public ClientPackets packetID { get; set; }
+            //public ClientPackets packetID { get; set; }
             public string message { get; set; }
             public object obj { get; set; }
         }
         public class RequestResult<T> : RequestResult
         {
-            public RequestResult(bool success, ClientPackets packetID, string message = null, object obj = null) : base(success, packetID, message, obj)
+            public RequestResult(bool success, ClientPackets packetID, object obj = null, string message = null) : base(success, obj, message)
             {
             }
         }
@@ -33,25 +33,20 @@ namespace Bindings
         {
             public CreateRoom(string name, int maxPlayers)
             {
-                this.name = name;
-                this.maxPlayers = maxPlayers;
+                gameRoomInfo = new GameRoomInfo(name, maxPlayers);
             }
-
-            public string name { get; set; }
-            public int maxPlayers { get; set; }
+            public GameRoomInfo gameRoomInfo; 
 
         }       
         public class JoinRoom
         {
-            public JoinRoom(GameRoom gameRoom, string playerName)
+            public JoinRoom(GameRoomInfo gameRoomInfo)
             {
-                this.gameRoom = gameRoom;
-                this.playerName = playerName;
+                this.gameRoomInfo = gameRoomInfo;                
             }
 
-            public GameRoom gameRoom { get; set; }
-            public string playerName { get; set; }
-
+            public GameRoomInfo gameRoomInfo { get; set; }            
         }
+        public class RoomsList { }
     }
 }

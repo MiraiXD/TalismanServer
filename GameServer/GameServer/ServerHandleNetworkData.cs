@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Bindings;
 using Newtonsoft.Json;
+using ComNet;
 namespace GameServer
 {
     class ServerHandleNetworkData
@@ -16,32 +16,64 @@ namespace GameServer
             {
                 { (int)ClientPackets.CRequestRoomsList, HandleRequestRoomsList},
                 { (int)ClientPackets.CCreateRoom, HandleCreateRoom},
-                { (int)ClientPackets.CJoinRoom, HandleJoinRoom}
+                { (int)ClientPackets.CJoinRoom, HandleJoinRoom},
+                { (int)ClientPackets.CGameReady, HandleGameReady}
+
             };
         }
+
+        private static void HandleGameReady(int index, byte[] data)
+        {
+            ServerTCP.clients[index].gameRoom.SetClientReady(index);
+        }        
 
         private static void HandleJoinRoom(int index, byte[] data)
         {
             ClientRequests.JoinRoom request = ServerTCP.GetData<ClientRequests.JoinRoom>(data);
-            ServerTCP.JoinRoom(index,request.playerName,request.gameRoom);
+
+            bool success = false;
+            string message = "No such room";            
+            foreach (GameRoom room in ServerTCP.gameRooms)
+            {
+                if (request.gameRoomInfo.name == room.gameRoomInfo.name)
+                {
+                    if (room.IsFull())
+                    {
+                        success = false;
+                        message = "Room is full";
+                    }
+                    else
+                    {
+                        //Player player = new Player(index, request.playerName);
+                        room.AddClient(ServerTCP.clients[index]);
+                        //ServerTCP.clients[index].player = player;                        
+                        success = true;
+                    }                    
+                    break;
+                }
+            }
+            ServerResponds.RequestResult<ClientRequests.JoinRoom> result = new ServerResponds.RequestResult<ClientRequests.JoinRoom>(success, ClientPackets.CJoinRoom, ServerTCP.clients[index].gameRoom.gameRoomInfo, success ? null : message);
+            //ServerTCP.SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result, settings));
+            ServerTCP.SendObject(index, ServerPackets.SRequestResult, result);
+
+            //ServerTCP.JoinRoom(index,request.playerName,request.gameRoom);
         }
 
         private static void HandleCreateRoom(int index, byte[] data)
-        {
-            //PacketBuffer receivedBuffer = new PacketBuffer();
-            //receivedBuffer.WriteBytes(data);
-            //receivedBuffer.ReadInteger();
-            //string msg = receivedBuffer.ReadString();
-            //receivedBuffer.Dispose();
-            //string msg = ServerTCP.GetString(data);
-            //Request.CreateRoom request = JsonConvert.DeserializeObject<Request.CreateRoom>(msg);
+        {            
             ClientRequests.CreateRoom request = ServerTCP.GetData<ClientRequests.CreateRoom>(data);
-            ServerTCP.CreateRoom(index,request.name, request.maxPlayers);
+            //ServerTCP.CreateRoom(index,request.name, request.maxPlayers);
         }
 
         private static void HandleRequestRoomsList(int index, byte[] data)
         {
-            ServerTCP.SendRoomsList(index);           
+            ClientRequests.RoomsList request = ServerTCP.GetData<ClientRequests.RoomsList>(data);
+
+            GameRoomInfo[] gameRoomInfos = new GameRoomInfo[ServerTCP.gameRooms.Count];
+            for (int i = 0; i < ServerTCP.gameRooms.Count; i++) gameRoomInfos[i] = ServerTCP.gameRooms[i].gameRoomInfo;
+
+            ServerResponds.RequestResult<ClientRequests.RoomsList> result = new ServerResponds.RequestResult<ClientRequests.RoomsList>(true, ClientPackets.CRequestRoomsList, gameRoomInfos);
+            ServerTCP.SendObject(index, ServerPackets.SRequestResult, gameRoomInfos);
             Console.WriteLine("Sending rooms list");
         }
 

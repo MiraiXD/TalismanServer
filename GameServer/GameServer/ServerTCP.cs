@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using Bindings;
 using Newtonsoft.Json;
+using ComNet;
 namespace GameServer
 {
     class ServerTCP
@@ -11,26 +11,28 @@ namespace GameServer
         private static Socket _serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private static byte[] buffer = new byte[1024];
         private static JsonSerializerSettings settings = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
-        private static Client[] _clients = new Client[Constants.MAX_PLAYERS];
+        public static Client[] clients = new Client[Constants.MAX_PLAYERS];
         public static List<GameRoom> gameRooms { get; private set; }
         public static void SetupServer()
         {
             gameRooms = new List<GameRoom>();
-            gameRooms.Add(new GameRoom(0, "11", 20));
-            gameRooms.Add(new GameRoom(6, "121", 2));
-            gameRooms.Add(new GameRoom(1, "11f", 2));
-            gameRooms.Add(new GameRoom(6, "1fsafas1", 2));
-            gameRooms.Add(new GameRoom(2, "1sa1", 2));
-            gameRooms.Add(new GameRoom(3, "1s1", 2));
+            gameRooms.Add(new GameRoom("11", 20));
+            gameRooms.Add(new GameRoom("121", 2));
+            gameRooms.Add(new GameRoom("11f", 2));
+            gameRooms.Add(new GameRoom("1fsafas1", 2));
+            gameRooms.Add(new GameRoom("1sa1", 2));
+            gameRooms.Add(new GameRoom("1s1", 2));
             
             for (int i = 0; i < Constants.MAX_PLAYERS; i++)
             {
-                _clients[i] = new Client();
+                clients[i] = new Client();
             }
             _serverSocket.Bind(new IPEndPoint(IPAddress.Any, 5555));
             _serverSocket.Listen(10);
             _serverSocket.BeginAccept(new AsyncCallback(AcceptCallback), null);
         }
+
+       
 
         private static void AcceptCallback(IAsyncResult ar)
         {
@@ -39,13 +41,15 @@ namespace GameServer
 
             for (int i = 0; i < Constants.MAX_PLAYERS; i++)
             {
-                if (_clients[i].socket == null)
+                if (clients[i].socket == null)
                 {
-                    _clients[i].socket = socket;
-                    _clients[i].index = i;
-                    _clients[i].ip = socket.RemoteEndPoint.ToString();
-                    _clients[i].StartClient();
-                    Console.WriteLine("Connection from '{0}' received", _clients[i].ip);
+                    clients[i].socket = socket;
+                    clients[i].index = i;
+                    clients[i].ip = socket.RemoteEndPoint.ToString();
+                    clients[i].clientInfo = new ClientInfo("Client" + i.ToString());
+                    clients[i].gameRoom = null;
+                    clients[i].StartClient();
+                    Console.WriteLine("Connection from '{0}' received", clients[i].ip);
                     SendConnectionOK(i);
                     return;
                 }
@@ -60,52 +64,18 @@ namespace GameServer
             sizeInfo[2] = (byte)(data.Length >> 16);
             sizeInfo[3] = (byte)(data.Length >> 24);
 
-            _clients[index].socket.Send(sizeInfo);
-            _clients[index].socket.Send(data
+            clients[index].socket.Send(sizeInfo);
+            clients[index].socket.Send(data
 );
         }
 
         public static void SendConnectionOK(int index)
+        {           
+            SendString(index, ServerPackets.SConnectionOK, "You are successfully connected to the server");
+        }                
+        public static void SendObject(int index, ServerPackets packetID, object obj = null)
         {
-            PacketBuffer buffer = new PacketBuffer();
-            buffer.WriteInteger((int)ServerPackets.SConnectionOK);
-            buffer.WriteString("You are successfully connected to the server");
-            SendDataTo(index, buffer.ToArray());
-            buffer.Dispose();
-        }
-        public static void SendRoomsList(int index)
-        {
-            SendString(index, ServerPackets.SReplyRoomsList, JsonConvert.SerializeObject(gameRooms, settings));
-        }
-        public static void CreateRoom(int index, string name, int maxPlayers)
-        {
-            
-        }
-        public static void JoinRoom(int index, string playerName,GameRoom gameRoom)
-        {
-            bool success = false;
-            string message = "No such room";
-            GameRoom room = null;
-            foreach (GameRoom r in gameRooms)
-            {
-                if (gameRoom.name == r.name)
-                {                    
-                    if (r.IsFull())
-                    {
-                        success = false;
-                        message = "Room is full";
-                    }
-                    else
-                    {                        
-                        r.AddPlayer(new Player(index, playerName));
-                        success = true;
-                    }
-                    room = r;
-                    break;
-                }
-            }
-            ServerResponds.RequestResult<ClientRequests.JoinRoom> result = new ServerResponds.RequestResult<ClientRequests.JoinRoom>(success, ClientPackets.CJoinRoom, success ? null : message, room);
-            SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result, settings));
+            SendString(index, packetID, JsonConvert.SerializeObject(obj, settings));
         }
         public static void SendString(int index, ServerPackets packetID, string msg = null)
         {
@@ -146,6 +116,9 @@ namespace GameServer
         public string ip;
         public Socket socket;
         public bool closing = false;
+        public ClientInfo clientInfo;
+        public GameRoom gameRoom = null;
+        public bool gameReady = false;
         private byte[] _buffer = new byte[1024];
 
         public void StartClient()
