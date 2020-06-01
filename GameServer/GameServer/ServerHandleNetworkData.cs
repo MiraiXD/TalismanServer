@@ -4,28 +4,29 @@ using Newtonsoft.Json;
 using ComNet;
 namespace GameServer
 {
-    class ServerHandleNetworkData
+    public delegate void ClientMessageReceiver(int index, byte[] data);
+    public class ServerHandleNetworkData
     {
-        private delegate void Packet_(int index, byte[] data);
-        private static Dictionary<int, Packet_> packets;
+        
+        private static Dictionary<int, ClientMessageReceiver> receivers;
 
         public static void InitializeNetworkPackages()
         {
             Console.WriteLine("Initialize Network Packages");
-            packets = new Dictionary<int, Packet_>()
+            receivers = new Dictionary<int, ClientMessageReceiver>()
             {
                 { (int)ClientPackets.CRequestRoomsList, HandleRequestRoomsList},
                 { (int)ClientPackets.CCreateRoom, HandleCreateRoom},
                 { (int)ClientPackets.CJoinRoom, HandleJoinRoom},
-                { (int)ClientPackets.CGameReady, HandleGameReady}
+                //{ (int)ClientPackets.CGameReady, HandleGameReady}
 
             };
         }
 
-        private static void HandleGameReady(int index, byte[] data)
-        {
-            ServerTCP.clients[index].gameRoom.SetClientReady(index);
-        }        
+        //private static void HandleGameReady(int index, byte[] data)
+        //{
+        //    ServerTCP.clients[index].gameRoom.SetClientReady(index);
+        //}        
 
         private static void HandleJoinRoom(int index, byte[] data)
         {
@@ -59,10 +60,9 @@ namespace GameServer
             //ServerTCP.JoinRoom(index,request.playerName,request.gameRoom);
         }
 
-        private static void HandleCreateRoom(int index, byte[] data)
+        private static void HandleCreateRoom(int index, byte[] data) // GameType.Talisman
         {            
-            ClientRequests.CreateRoom request = ServerTCP.GetData<ClientRequests.CreateRoom>(data);
-            //ServerTCP.CreateRoom(index,request.name, request.maxPlayers);
+            ClientRequests.CreateRoom request = ServerTCP.GetData<ClientRequests.CreateRoom>(data);            
         }
 
         private static void HandleRequestRoomsList(int index, byte[] data)
@@ -73,7 +73,7 @@ namespace GameServer
             for (int i = 0; i < ServerTCP.gameRooms.Count; i++) gameRoomInfos[i] = ServerTCP.gameRooms[i].gameRoomInfo;
 
             ServerResponds.RequestResult<ClientRequests.RoomsList> result = new ServerResponds.RequestResult<ClientRequests.RoomsList>(true, ClientPackets.CRequestRoomsList, gameRoomInfos);
-            ServerTCP.SendObject(index, ServerPackets.SRequestResult, gameRoomInfos);
+            ServerTCP.SendObject(index, ServerPackets.SRequestResult, result);
             Console.WriteLine("Sending rooms list");
         }
 
@@ -83,9 +83,13 @@ namespace GameServer
             buffer.WriteBytes(data);
             int packetID = buffer.ReadInteger();
             buffer.Dispose();
-            if (packets.TryGetValue(packetID, out Packet_ Packet))
+            if (receivers.TryGetValue(packetID, out ClientMessageReceiver Packet))
             {
                 Packet.Invoke(index, data);
+            }
+            else
+            {
+                ServerTCP.clients[index].gameRoom.HandleClientMessage(packetID, index, data);
             }
         }
     }

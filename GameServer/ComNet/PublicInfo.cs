@@ -24,7 +24,7 @@ namespace ComNet
             clientInfos = new List<ClientInfo>();
         }
     }
-
+    // move to TalismanComNet.dll
     public class CharacterInfo
     {
         public enum Characters { Warrior, Mage }

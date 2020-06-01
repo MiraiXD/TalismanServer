@@ -16,12 +16,12 @@ namespace GameServer
         public static void SetupServer()
         {
             gameRooms = new List<GameRoom>();
-            gameRooms.Add(new GameRoom("11", 20));
-            gameRooms.Add(new GameRoom("121", 2));
-            gameRooms.Add(new GameRoom("11f", 2));
-            gameRooms.Add(new GameRoom("1fsafas1", 2));
-            gameRooms.Add(new GameRoom("1sa1", 2));
-            gameRooms.Add(new GameRoom("1s1", 2));
+            gameRooms.Add(new TalismanRoom("11", 20));
+            gameRooms.Add(new TalismanRoom("121", 2));
+            gameRooms.Add(new TalismanRoom("11f", 2));
+            gameRooms.Add(new TalismanRoom("1fsafas1", 2));
+            gameRooms.Add(new TalismanRoom("1sa1", 2));
+            gameRooms.Add(new TalismanRoom("1s1", 2));
             
             for (int i = 0; i < Constants.MAX_PLAYERS; i++)
             {

@@ -4,27 +4,75 @@ using System.Text;
 using ComNet;
 namespace GameServer
 {
-    public class GameRoom
+    public class TalismanRoom : GameRoom
+    {
+        public class TalismanPlayer : Player
+        {
+            public Character character;
+            public TalismanPlayer(Client client) : base(client) { }            
+        }
+        public TalismanRoom(string name, int maxPlayers) : base(name, maxPlayers) { }
+                
+        public override void InitializeNetworkPackages()
+        {
+            Console.WriteLine("Initialize Network Packages");
+            receivers = new Dictionary<int, ClientMessageReceiver>()
+            {               
+                { (int)ClientPackets.CGameReady, HandleGameReady}
+            };
+        }
+        public override void AddClient(Client client)
+        {
+            base.AddClient(client);
+            players.Add(new TalismanPlayer(client));
+        }
+        protected override void AllReady()
+        {
+            AssignCharacters();
+        }
+
+        private void AssignCharacters()
+        {
+            foreach (TalismanPlayer player in players)
+            {
+                player.character = new Warrior();
+                ServerTCP.SendObject(player.client.index, ServerPackets.SCharacterAssignment, player.character.characterInfo);
+            }
+        }
+
+
+
+        private void HandleGameReady(int index, byte[] data)
+        {
+            SetPlayerReady(index);
+        }
+    }
+
+    public abstract class GameRoom
     {
         public static int counter = 0;
         public int id { get; set; }
         public GameRoomInfo gameRoomInfo { get; set; }
         public List<Player> players { get; set; }
 
+        protected Dictionary<int, ClientMessageReceiver> receivers;
+        public abstract void InitializeNetworkPackages();
+        protected abstract void AllReady();
+
         public GameRoom(string name, int maxPlayers)
         {
             id = counter++;
             gameRoomInfo = new GameRoomInfo(name, maxPlayers);
             players = new List<Player>();
+            InitializeNetworkPackages();
         }
-        public void AddClient(Client client)
+        public virtual void AddClient(Client client)
         {
-            client.gameRoom = this;
-            players.Add(new Player(client));
+            client.gameRoom = this;            
             gameRoomInfo.clientInfos.Add(client.clientInfo);
 
         }
-        public void SetClientReady(int index)
+        public void SetPlayerReady(int index)
         {
             Player player = null;
             for (int i = 0; i < players.Count; i++)
@@ -39,29 +87,29 @@ namespace GameServer
             foreach (Player p in players)
                 if (!p.gameReady) { allReady = false; break; }
 
-            if (allReady) AssignCharacters();
+            if (allReady) AllReady();
         }
 
-        private void AssignCharacters()
-        {
-            foreach(Player player in players)
-            {
-                player.character = new Warrior();
-                ServerTCP.SendObject(player.client.index, ServerPackets.SCharacterAssignment, player.character);
-            }
-        }
+        
 
         public bool IsFull()
         {
             return players.Count >= gameRoomInfo.maxPlayers;
         }
 
-        private class Player
+        public class Player
         {
             public Client client;
-            public bool gameReady = false;
-            public Character character;
+            public bool gameReady = false;            
             public Player(Client client) { this.client = client; }
+        }
+
+        public void HandleClientMessage(int packetID, int index, byte[] data)
+        {
+            if(receivers.TryGetValue(packetID, out ClientMessageReceiver receiver))
+            {
+                receiver.Invoke(index, data);
+            }
         }
     }
     //public class Client
