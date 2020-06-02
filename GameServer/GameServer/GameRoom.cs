@@ -6,10 +6,12 @@ namespace GameServer
 {
     public class TalismanRoom : GameRoom
     {
+        private Player currentPlayerMoving;
+
         public class TalismanPlayer : Player
         {
             public Character character;
-            public TalismanPlayer(Client client) : base(client) { }            
+            public TalismanPlayer(Client client, int roomID) : base(client, roomID) { }            
         }
         public TalismanRoom(string name, int maxPlayers) : base(name, maxPlayers) { }
                 
@@ -21,14 +23,17 @@ namespace GameServer
                 { (int)ClientPackets.CGameReady, HandleGameReady}
             };
         }
-        public override void AddClient(Client client)
+        public override PlayerInfo AddClient(Client client)
         {
             base.AddClient(client);
-            players.Add(new TalismanPlayer(client));
+            TalismanPlayer newPlayer = new TalismanPlayer(client, players.Count);
+            players.Add(newPlayer);
+            return newPlayer.playerInfo;
         }
-        protected override void AllReady()
+        protected override void Play()
         {
             AssignCharacters();
+            SetMovingPlayer(players[0]);
         }
 
         private void AssignCharacters()
@@ -39,7 +44,11 @@ namespace GameServer
                 ServerTCP.SendObject(player.client.index, ServerPackets.SCharacterAssignment, player.character.characterInfo);
             }
         }
-
+        private void SetMovingPlayer(Player player)
+        {
+            currentPlayerMoving = player;
+            SendToAll(ServerPackets.PlayerTurn, currentPlayerMoving.playerInfo);
+        }
 
 
         private void HandleGameReady(int index, byte[] data)
@@ -50,14 +59,14 @@ namespace GameServer
 
     public abstract class GameRoom
     {
-        public static int counter = 0;
+        private static int counter = 0;
         public int id { get; set; }
         public GameRoomInfo gameRoomInfo { get; set; }
         public List<Player> players { get; set; }
 
         protected Dictionary<int, ClientMessageReceiver> receivers;
         public abstract void InitializeNetworkPackages();
-        protected abstract void AllReady();
+        protected abstract void Play();
 
         public GameRoom(string name, int maxPlayers)
         {
@@ -66,10 +75,18 @@ namespace GameServer
             players = new List<Player>();
             InitializeNetworkPackages();
         }
-        public virtual void AddClient(Client client)
+        protected void SendToAll(ServerPackets packetID, object obj = null)
+        {
+            for(int i=0; i<players.Count; i++)
+            {
+                ServerTCP.SendObject(players[i].client.index, packetID, obj);
+            }
+        }
+        public virtual PlayerInfo AddClient(Client client)
         {
             client.gameRoom = this;            
             gameRoomInfo.clientInfos.Add(client.clientInfo);
+            return null;
 
         }
         public void SetPlayerReady(int index)
@@ -87,7 +104,7 @@ namespace GameServer
             foreach (Player p in players)
                 if (!p.gameReady) { allReady = false; break; }
 
-            if (allReady) AllReady();
+            if (allReady) Play();
         }
 
         
@@ -99,9 +116,10 @@ namespace GameServer
 
         public class Player
         {
+            public PlayerInfo playerInfo;
             public Client client;
             public bool gameReady = false;            
-            public Player(Client client) { this.client = client; }
+            public Player(Client client, int roomID) { this.client = client; this.playerInfo = new PlayerInfo(roomID); }
         }
 
         public void HandleClientMessage(int packetID, int index, byte[] data)

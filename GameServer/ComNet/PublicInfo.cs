@@ -4,9 +4,17 @@ using System.Text;
 
 namespace ComNet
 {
+    public class PlayerInfo
+    {
+        public int roomID;
+        public PlayerInfo(int roomID)
+        {
+            this.roomID = roomID;
+        }
+    }
     public class ClientInfo
     {
-        public string name { get; set; }
+        public string name;        
         public ClientInfo(string name)
         {
             this.name = name;

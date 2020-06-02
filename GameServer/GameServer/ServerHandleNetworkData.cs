@@ -33,7 +33,9 @@ namespace GameServer
             ClientRequests.JoinRoom request = ServerTCP.GetData<ClientRequests.JoinRoom>(data);
 
             bool success = false;
-            string message = "No such room";            
+            string message = "No such room";
+            //PlayerInfo newPlayerInfo = null;
+            ServerResponds.JoinRoomResult joinRoomResult = new ServerResponds.JoinRoomResult();
             foreach (GameRoom room in ServerTCP.gameRooms)
             {
                 if (request.gameRoomInfo.name == room.gameRoomInfo.name)
@@ -46,14 +48,15 @@ namespace GameServer
                     else
                     {
                         //Player player = new Player(index, request.playerName);
-                        room.AddClient(ServerTCP.clients[index]);
+                        joinRoomResult.newPlayerInfo = room.AddClient(ServerTCP.clients[index]);
+                        joinRoomResult.joinedRoomInfo = room.gameRoomInfo;
                         //ServerTCP.clients[index].player = player;                        
                         success = true;
                     }                    
                     break;
                 }
-            }
-            ServerResponds.RequestResult<ClientRequests.JoinRoom> result = new ServerResponds.RequestResult<ClientRequests.JoinRoom>(success, ClientPackets.CJoinRoom, ServerTCP.clients[index].gameRoom.gameRoomInfo, success ? null : message);
+            }            
+            ServerResponds.RequestResult<ServerResponds.JoinRoomResult> result = new ServerResponds.RequestResult<ServerResponds.JoinRoomResult>(success, joinRoomResult, success ? null : message);
             //ServerTCP.SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result, settings));
             ServerTCP.SendObject(index, ServerPackets.SRequestResult, result);
 
@@ -72,7 +75,8 @@ namespace GameServer
             GameRoomInfo[] gameRoomInfos = new GameRoomInfo[ServerTCP.gameRooms.Count];
             for (int i = 0; i < ServerTCP.gameRooms.Count; i++) gameRoomInfos[i] = ServerTCP.gameRooms[i].gameRoomInfo;
 
-            ServerResponds.RequestResult<ClientRequests.RoomsList> result = new ServerResponds.RequestResult<ClientRequests.RoomsList>(true, ClientPackets.CRequestRoomsList, gameRoomInfos);
+            ServerResponds.RoomsListResult roomsListResult = new ServerResponds.RoomsListResult { rooms = gameRoomInfos };
+            ServerResponds.RequestResult<ServerResponds.RoomsListResult> result = new ServerResponds.RequestResult<ServerResponds.RoomsListResult>(true, roomsListResult);
             ServerTCP.SendObject(index, ServerPackets.SRequestResult, result);
             Console.WriteLine("Sending rooms list");
         }

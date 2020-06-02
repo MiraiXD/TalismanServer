@@ -6,25 +6,41 @@ namespace ComNet
 {    
     public class ServerResponds
     { 
-        public class RequestResult
+        //public abstract class RequestResult
+        //{
+        //    public RequestResult(bool success, string message = null)
+        //    {
+        //        this.success = success;
+        //       // this.packetID = packetID;
+        //        this.message = message;
+        //       // this.obj = obj;
+        //    }
+        //    public bool success { get; set; }
+        //    //public ClientPackets packetID { get; set; }
+        //    public string message { get; set; }
+        //    //public object obj { get; set; }
+        //}
+        public class RequestResult<T>// : RequestResult
         {
-            public RequestResult(bool success, object obj = null, string message = null)
+            public T result;         
+            public bool success { get; set; }            
+            public string message { get; set; }
+            public RequestResult(bool success, T result = default(T), string message = null)
             {
                 this.success = success;
-               // this.packetID = packetID;
                 this.message = message;
-                this.obj = obj;
+                this.result = result;
             }
-            public bool success { get; set; }
-            //public ClientPackets packetID { get; set; }
-            public string message { get; set; }
-            public object obj { get; set; }
         }
-        public class RequestResult<T> : RequestResult
+
+        public class JoinRoomResult
         {
-            public RequestResult(bool success, ClientPackets packetID, object obj = null, string message = null) : base(success, obj, message)
-            {
-            }
+            public GameRoomInfo joinedRoomInfo;
+            public PlayerInfo newPlayerInfo;
+        }
+        public class RoomsListResult
+        {
+            public GameRoomInfo[] rooms;
         }
     }    
     public class ClientRequests
