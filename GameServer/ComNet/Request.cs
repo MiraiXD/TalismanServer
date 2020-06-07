@@ -5,30 +5,26 @@ using System.Text;
 namespace ComNet
 {    
     public class ServerResponds
-    { 
-        //public abstract class RequestResult
-        //{
-        //    public RequestResult(bool success, string message = null)
-        //    {
-        //        this.success = success;
-        //       // this.packetID = packetID;
-        //        this.message = message;
-        //       // this.obj = obj;
-        //    }
-        //    public bool success { get; set; }
-        //    //public ClientPackets packetID { get; set; }
-        //    public string message { get; set; }
-        //    //public object obj { get; set; }
-        //}
-        public class RequestResult<T>// : RequestResult
+    {
+        public abstract class RequestResult // needed for client side
+        {
+            public RequestResult(bool success, string message = null)
+            {
+                this.success = success;                
+                this.message = message;                
+            }
+            public bool success { get; set; }            
+            public string message { get; set; }            
+        }
+        public class RequestResult<T> : RequestResult
         {
             public T result;         
-            public bool success { get; set; }            
-            public string message { get; set; }
-            public RequestResult(bool success, T result = default(T), string message = null)
+            //public bool success { get; set; }            
+            //public string message { get; set; }
+            public RequestResult(bool success, T result = default(T), string message = null) : base(success, message)
             {
-                this.success = success;
-                this.message = message;
+              //  this.success = success;
+               // this.message = message;
                 this.result = result;
             }
         }

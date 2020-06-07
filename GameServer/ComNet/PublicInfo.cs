@@ -4,12 +4,58 @@ using System.Text;
 
 namespace ComNet
 {
+    public class MapTileInfo : IComparable<MapTileInfo>
+    {
+        private static int counter = 0;
+        public enum MapTiles { City, Harbor, Tavern, Fields, Cave, Windmill, Graveyard, Forest}
+        public MapTiles tileType;
+        public int id;
+        public MapTileInfo(MapTiles tileType)
+        {
+            id = counter++;
+            this.tileType = tileType;
+        }       
+
+        public int CompareTo(MapTileInfo other)
+        {
+            if (this.id == other.id && this.tileType == other.tileType) return 0;
+            else return -1;
+        }
+    }
+    public class MapInfo : IComparable<MapInfo>
+    {
+        public static MapInfo defaultMap;
+        public MapTileInfo[] mapTiles;
+        public MapInfo(MapTileInfo[] tiles)
+        {
+            mapTiles = tiles;
+        }
+
+        public int CompareTo(MapInfo other)
+        {
+            for (int i = 0; i < mapTiles.Length; i++)
+            {
+                if (mapTiles[i].CompareTo(other.mapTiles[i]) != 0) return -1;
+            }
+            return 0;
+        }
+    }
     public class PlayerInfo
     {
-        public int roomID;
-        public PlayerInfo(int roomID)
+        public int inRoomID;
+        public bool isAdmin;
+        public PlayerInfo(int roomID, bool isAdmin)
         {
-            this.roomID = roomID;
+            this.inRoomID = roomID;
+            this.isAdmin = isAdmin;
+        }
+    }
+    public class TalismanPlayerInfo : PlayerInfo
+    {
+        public CharacterInfo characterInfo;
+        public TalismanPlayerInfo(int roomID, bool isAdmin, CharacterInfo characterInfo) : base(roomID, isAdmin)
+        {
+            this.characterInfo = characterInfo;
         }
     }
     public class ClientInfo
@@ -37,9 +83,10 @@ namespace ComNet
     {
         public enum Characters { Warrior, Mage }
         
-        public CharacterInfo(Characters character, int maxHealth, int maxStrength, int maxPower)
+        public CharacterInfo(Characters character, MapTileInfo startingTile, int maxHealth, int maxStrength, int maxPower)
         {
             this.character = character;
+            this.startingTile = startingTile;
             this.maxHealth = maxHealth;
             this.maxStrength = maxStrength;
             this.maxPower = maxPower;
@@ -49,6 +96,7 @@ namespace ComNet
             currentPower = maxPower;
         }
         public Characters character;
+        public MapTileInfo startingTile;
         public int maxHealth, currentHealth;
         public int maxStrength, currentStrength;
         public int maxPower, currentPower;

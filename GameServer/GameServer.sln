@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.28307.960
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServer", "GameServer\GameServer.csproj", "{13FB1503-C437-4AB4-AD74-AD1B02107760}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComNet", "ComNet\ComNet.csproj", "{660C659C-B07A-49AF-80B0-C085AA30E525}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ComNet", "ComNet\ComNet.csproj", "{660C659C-B07A-49AF-80B0-C085AA30E525}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

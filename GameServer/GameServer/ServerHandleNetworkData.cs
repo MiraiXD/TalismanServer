@@ -18,6 +18,7 @@ namespace GameServer
                 { (int)ClientPackets.CRequestRoomsList, HandleRequestRoomsList},
                 { (int)ClientPackets.CCreateRoom, HandleCreateRoom},
                 { (int)ClientPackets.CJoinRoom, HandleJoinRoom},
+                
                 //{ (int)ClientPackets.CGameReady, HandleGameReady}
 
             };
@@ -48,7 +49,8 @@ namespace GameServer
                     else
                     {
                         //Player player = new Player(index, request.playerName);
-                        joinRoomResult.newPlayerInfo = room.AddClient(ServerTCP.clients[index]);
+                        bool isAdmin = room.players.Count == 0; // if there's no players in this room then the first one to join becomes the admin
+                        joinRoomResult.newPlayerInfo = room.AddClient(ServerTCP.clients[index], isAdmin);
                         joinRoomResult.joinedRoomInfo = room.gameRoomInfo;
                         //ServerTCP.clients[index].player = player;                        
                         success = true;

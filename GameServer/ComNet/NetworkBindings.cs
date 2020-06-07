@@ -14,6 +14,7 @@ namespace ComNet
         SConnectionOK,
         SReplyRoomsList,
         SRequestResult,
+        SMapInfo,
         SCharacterAssignment,
         PlayerTurn,
     }
@@ -23,6 +24,7 @@ namespace ComNet
         CRequestRoomsList,
         CCreateRoom,
         CJoinRoom,
-        CGameReady
+        CGameReady,
+        CAdminMapInfo
     }
 }

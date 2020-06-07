@@ -7,11 +7,15 @@ namespace GameServer
     public class TalismanRoom : GameRoom
     {
         private Player currentPlayerMoving;
+        private MapInfo mapInfo;
 
         public class TalismanPlayer : Player
         {
-            public Character character;
-            public TalismanPlayer(Client client, int roomID) : base(client, roomID) { }            
+            public override PlayerInfo playerInfo { get => _playerInfo; set => _playerInfo = (TalismanPlayerInfo) value; }
+            private TalismanPlayerInfo _playerInfo;
+            public Character character { get { return _character; } set { _character = value; _playerInfo.characterInfo = _character.characterInfo; } }
+            private Character _character;
+            public TalismanPlayer(Client client, int roomID, bool isAdmin) : base(client, roomID, isAdmin) { }            
         }
         public TalismanRoom(string name, int maxPlayers) : base(name, maxPlayers) { }
                 
@@ -20,13 +24,25 @@ namespace GameServer
             Console.WriteLine("Initialize Network Packages");
             receivers = new Dictionary<int, ClientMessageReceiver>()
             {               
-                { (int)ClientPackets.CGameReady, HandleGameReady}
+                { (int)ClientPackets.CGameReady, HandleGameReady},
+                { (int)ClientPackets.CAdminMapInfo, HandleMapInfo},
             };
         }
-        public override PlayerInfo AddClient(Client client)
+
+        private void HandleMapInfo(int index, byte[] data)
         {
-            base.AddClient(client);
-            TalismanPlayer newPlayer = new TalismanPlayer(client, players.Count);
+            try
+            {
+                mapInfo = ServerTCP.GetData<MapInfo>(data);
+            }
+            catch { return; }
+            SendToAll(ServerPackets.SMapInfo, mapInfo);
+        }
+
+        public override PlayerInfo AddClient(Client client, bool isAdmin)
+        {
+            base.AddClient(client, isAdmin);
+            TalismanPlayer newPlayer = new TalismanPlayer(client, players.Count, isAdmin);
             players.Add(newPlayer);
             return newPlayer.playerInfo;
         }
@@ -82,7 +98,7 @@ namespace GameServer
                 ServerTCP.SendObject(players[i].client.index, packetID, obj);
             }
         }
-        public virtual PlayerInfo AddClient(Client client)
+        public virtual PlayerInfo AddClient(Client client, bool isAdmin)
         {
             client.gameRoom = this;            
             gameRoomInfo.clientInfos.Add(client.clientInfo);
@@ -114,12 +130,12 @@ namespace GameServer
             return players.Count >= gameRoomInfo.maxPlayers;
         }
 
-        public class Player
+        public abstract class Player
         {
-            public PlayerInfo playerInfo;
+            public abstract PlayerInfo playerInfo { get; set; }            
             public Client client;
             public bool gameReady = false;            
-            public Player(Client client, int roomID) { this.client = client; this.playerInfo = new PlayerInfo(roomID); }
+            public Player(Client client, int roomID, bool isAdmin) { this.client = client; this.playerInfo = new PlayerInfo(roomID, isAdmin); }
         }
 
         public void HandleClientMessage(int packetID, int index, byte[] data)

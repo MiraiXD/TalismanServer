@@ -10,9 +10,9 @@ namespace GameServer
     }
     public class Warrior : Character
     {
-        public Warrior()
+        public Warrior(MapTileInfo startingTile)
         {            
-            characterInfo = new CharacterInfo(CharacterInfo.Characters.Warrior, 5, 5, 2);
+            characterInfo = new CharacterInfo(CharacterInfo.Characters.Warrior,startingTile, 5, 5, 2);
         }
     }
 }
