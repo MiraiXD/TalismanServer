@@ -24,7 +24,7 @@ namespace ComNet
     }
     public class MapInfo : IComparable<MapInfo>
     {
-        public static MapInfo defaultMap;
+        //public static MapInfo defaultMap;
         public MapTileInfo[] mapTiles;
         public MapInfo(MapTileInfo[] tiles)
         {
@@ -83,10 +83,10 @@ namespace ComNet
     {
         public enum Characters { Warrior, Mage }
         
-        public CharacterInfo(Characters character, MapTileInfo startingTile, int maxHealth, int maxStrength, int maxPower)
+        public CharacterInfo(Characters character, MapTileInfo.MapTiles startingTileType, int maxHealth, int maxStrength, int maxPower)
         {
             this.character = character;
-            this.startingTile = startingTile;
+            this.startingTileType = startingTileType;
             this.maxHealth = maxHealth;
             this.maxStrength = maxStrength;
             this.maxPower = maxPower;
@@ -97,6 +97,7 @@ namespace ComNet
         }
         public Characters character;
         public MapTileInfo startingTile;
+        public MapTileInfo.MapTiles startingTileType;
         public int maxHealth, currentHealth;
         public int maxStrength, currentStrength;
         public int maxPower, currentPower;

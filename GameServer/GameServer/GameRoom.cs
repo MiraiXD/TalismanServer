@@ -11,31 +11,50 @@ namespace GameServer
 
         public class TalismanPlayer : Player
         {
-            public override PlayerInfo playerInfo { get => _playerInfo; set => _playerInfo = (TalismanPlayerInfo) value; }
+            public bool characterAccepted = false;
+            public override PlayerInfo playerInfo { get => _playerInfo; set => _playerInfo = (TalismanPlayerInfo)value; }
             private TalismanPlayerInfo _playerInfo;
             public Character character { get { return _character; } set { _character = value; _playerInfo.characterInfo = _character.characterInfo; } }
             private Character _character;
-            public TalismanPlayer(Client client, int roomID, bool isAdmin) : base(client, roomID, isAdmin) { }            
+            public TalismanPlayer(Client client, int roomID, bool isAdmin) : base(client, roomID, isAdmin)
+            {
+                playerInfo = new TalismanPlayerInfo(roomID, isAdmin, null);
+            }
         }
         public TalismanRoom(string name, int maxPlayers) : base(name, maxPlayers) { }
-                
+
         public override void InitializeNetworkPackages()
         {
-            Console.WriteLine("Initialize Network Packages");
+            Console.WriteLine("TalismanRoom - Initialize Network Packages");
             receivers = new Dictionary<int, ClientMessageReceiver>()
-            {               
+            {
                 { (int)ClientPackets.CGameReady, HandleGameReady},
                 { (int)ClientPackets.CAdminMapInfo, HandleMapInfo},
+                { (int)ClientPackets.CCharacterAccepted, HandleCharacterAccepted},
             };
+        }
+
+        private void HandleCharacterAccepted(int index, byte[] data)
+        {
+            Player player = null;
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i].client == ServerTCP.clients[index]) { player = players[i]; break; }
+            }
+            if (player == null) Console.WriteLine("No such client!");
+
+            ((TalismanPlayer)player).characterAccepted = true;
+
+            bool allReady = true;
+            foreach (TalismanPlayer p in players)
+                if (!p.characterAccepted) { allReady = false; break; }
+
+            if (allReady) SetMovingPlayer(players[0]);
         }
 
         private void HandleMapInfo(int index, byte[] data)
         {
-            try
-            {
-                mapInfo = ServerTCP.GetData<MapInfo>(data);
-            }
-            catch { return; }
+            mapInfo = ServerTCP.GetData<MapInfo>(data);
             SendToAll(ServerPackets.SMapInfo, mapInfo);
         }
 
@@ -49,16 +68,31 @@ namespace GameServer
         protected override void Play()
         {
             AssignCharacters();
-            SetMovingPlayer(players[0]);
+            //SetMovingPlayer(players[0]);
         }
 
         private void AssignCharacters()
         {
-            foreach (TalismanPlayer player in players)
+            TalismanPlayerInfo[] talismanPlayerInfos = new TalismanPlayerInfo[players.Count];
+            for (int i = 0; i < players.Count; i++)
             {
-                player.character = new Warrior();
-                ServerTCP.SendObject(player.client.index, ServerPackets.SCharacterAssignment, player.character.characterInfo);
+                TalismanPlayer player = (TalismanPlayer)players[i];
+                Character character = new Warrior();
+                character.characterInfo.startingTile = GetTile(mapInfo, character.characterInfo.startingTileType);
+                player.character = character;
+                talismanPlayerInfos[i] = (TalismanPlayerInfo)player.playerInfo;
             }
+            Console.WriteLine("Assigning characters");
+            SendToAll(ServerPackets.SCharacterAssignment, talismanPlayerInfos);
+        }
+        private MapTileInfo GetTile(MapInfo mapInfo, MapTileInfo.MapTiles tileType)
+        {
+            foreach (MapTileInfo tileInfo in mapInfo.mapTiles)
+            {
+                if (tileInfo.tileType == tileType)
+                    return tileInfo;
+            }
+            return null;
         }
         private void SetMovingPlayer(Player player)
         {
@@ -93,14 +127,14 @@ namespace GameServer
         }
         protected void SendToAll(ServerPackets packetID, object obj = null)
         {
-            for(int i=0; i<players.Count; i++)
+            for (int i = 0; i < players.Count; i++)
             {
                 ServerTCP.SendObject(players[i].client.index, packetID, obj);
             }
         }
         public virtual PlayerInfo AddClient(Client client, bool isAdmin)
         {
-            client.gameRoom = this;            
+            client.gameRoom = this;
             gameRoomInfo.clientInfos.Add(client.clientInfo);
             return null;
 
@@ -123,7 +157,7 @@ namespace GameServer
             if (allReady) Play();
         }
 
-        
+
 
         public bool IsFull()
         {
@@ -132,15 +166,19 @@ namespace GameServer
 
         public abstract class Player
         {
-            public abstract PlayerInfo playerInfo { get; set; }            
+            public abstract PlayerInfo playerInfo { get; set; }
             public Client client;
-            public bool gameReady = false;            
-            public Player(Client client, int roomID, bool isAdmin) { this.client = client; this.playerInfo = new PlayerInfo(roomID, isAdmin); }
+            public bool gameReady = false;
+            public Player(Client client, int roomID, bool isAdmin)
+            {
+                this.client = client;
+                //this.playerInfo = new PlayerInfo(roomID, isAdmin);
+            }
         }
 
         public void HandleClientMessage(int packetID, int index, byte[] data)
         {
-            if(receivers.TryGetValue(packetID, out ClientMessageReceiver receiver))
+            if (receivers.TryGetValue(packetID, out ClientMessageReceiver receiver))
             {
                 receiver.Invoke(index, data);
             }
@@ -160,5 +198,5 @@ namespace GameServer
     //    public Character character { get; set; }
     //    public bool isReady { get; set; }
     //} 
-    
+
 }

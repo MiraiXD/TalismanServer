@@ -31,37 +31,40 @@ namespace GameServer
 
         private static void HandleJoinRoom(int index, byte[] data)
         {
-            ClientRequests.JoinRoom request = ServerTCP.GetData<ClientRequests.JoinRoom>(data);
-
-            bool success = false;
-            string message = "No such room";
-            //PlayerInfo newPlayerInfo = null;
-            ServerResponds.JoinRoomResult joinRoomResult = new ServerResponds.JoinRoomResult();
-            foreach (GameRoom room in ServerTCP.gameRooms)
+            try
             {
-                if (request.gameRoomInfo.name == room.gameRoomInfo.name)
-                {
-                    if (room.IsFull())
-                    {
-                        success = false;
-                        message = "Room is full";
-                    }
-                    else
-                    {
-                        //Player player = new Player(index, request.playerName);
-                        bool isAdmin = room.players.Count == 0; // if there's no players in this room then the first one to join becomes the admin
-                        joinRoomResult.newPlayerInfo = room.AddClient(ServerTCP.clients[index], isAdmin);
-                        joinRoomResult.joinedRoomInfo = room.gameRoomInfo;
-                        //ServerTCP.clients[index].player = player;                        
-                        success = true;
-                    }                    
-                    break;
-                }
-            }            
-            ServerResponds.RequestResult<ServerResponds.JoinRoomResult> result = new ServerResponds.RequestResult<ServerResponds.JoinRoomResult>(success, joinRoomResult, success ? null : message);
-            //ServerTCP.SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result, settings));
-            ServerTCP.SendObject(index, ServerPackets.SRequestResult, result);
+                ClientRequests.JoinRoom request = ServerTCP.GetData<ClientRequests.JoinRoom>(data);
 
+                bool success = false;
+                string message = "No such room";
+                //PlayerInfo newPlayerInfo = null;
+                ServerResponds.JoinRoomResult joinRoomResult = new ServerResponds.JoinRoomResult();
+                foreach (GameRoom room in ServerTCP.gameRooms)
+                {
+                    if (request.gameRoomInfo.name == room.gameRoomInfo.name)
+                    {
+                        if (room.IsFull())
+                        {
+                            success = false;
+                            message = "Room is full";
+                        }
+                        else
+                        {
+                            //Player player = new Player(index, request.playerName);
+                            bool isAdmin = room.players.Count == 0; // if there's no players in this room then the first one to join becomes the admin
+                            joinRoomResult.newPlayerInfo = room.AddClient(ServerTCP.clients[index], isAdmin);
+                            joinRoomResult.joinedRoomInfo = room.gameRoomInfo;
+                            //ServerTCP.clients[index].player = player;                        
+                            success = true;
+                        }
+                        break;
+                    }
+                }
+                ServerResponds.RequestResult<ServerResponds.JoinRoomResult> result = new ServerResponds.RequestResult<ServerResponds.JoinRoomResult>(success, joinRoomResult, success ? null : message);
+                //ServerTCP.SendString(index, ServerPackets.SRequestResult, JsonConvert.SerializeObject(result, settings));
+                ServerTCP.SendObject(index, ServerPackets.SRequestResult, result);
+            }
+            catch(Exception e) { Console.WriteLine(e.StackTrace); }
             //ServerTCP.JoinRoom(index,request.playerName,request.gameRoom);
         }
 

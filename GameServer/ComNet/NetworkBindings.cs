@@ -25,6 +25,7 @@ namespace ComNet
         CCreateRoom,
         CJoinRoom,
         CGameReady,
-        CAdminMapInfo
+        CAdminMapInfo,
+        CCharacterAccepted,
     }
 }
