@@ -8,7 +8,7 @@ namespace GameServer
     {
         private Player currentPlayerMoving;
         private MapInfo mapInfo;
-
+        
         public class TalismanPlayer : Player
         {
             public bool characterAccepted = false;
@@ -71,17 +71,22 @@ namespace GameServer
         }
         protected override void Play()
         {
-            AssignCharacters();
+            SendToAll(ServerPackets.SGameReady);
+            //AssignCharacters();
             //SetMovingPlayer(players[0]);
         }
 
         private void AssignCharacters()
         {
             TalismanPlayerInfo[] talismanPlayerInfos = new TalismanPlayerInfo[players.Count];
+            List<Character> characters = new List<Character> { new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior() };
             for (int i = 0; i < players.Count; i++)
             {
                 TalismanPlayer player = (TalismanPlayer)players[i];
-                Character character = new Warrior();
+                int rand = new Random().Next(0, characters.Count);
+                Character character = characters[rand];
+                characters.RemoveAt(rand);
+
                 character.characterInfo.startingTile = GetTile(mapInfo, character.characterInfo.startingTileType);
                 player.character = character;
                 talismanPlayerInfos[i] = (TalismanPlayerInfo)player.playerInfo;

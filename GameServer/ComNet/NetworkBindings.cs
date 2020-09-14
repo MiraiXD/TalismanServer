@@ -15,6 +15,7 @@ namespace ComNet
         SReplyRoomsList,
         SRequestResult,
         SMapInfo,
+        SGameReady,
         SCharacterAssignment,
         PlayerTurn,
     }
