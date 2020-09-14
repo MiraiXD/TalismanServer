@@ -40,6 +40,10 @@ namespace ComNet
             return 0;
         }
     }
+    public class RollInfo
+    {
+        public int rollResult;
+    }
     public class PlayerInfo
     {
         public int inRoomID;

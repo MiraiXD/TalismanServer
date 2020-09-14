@@ -38,6 +38,11 @@ namespace ComNet
         {
             public GameRoomInfo[] rooms;
         }
+        public class RollDiceResult
+        {
+            public int diceCount;
+            public int rollResult;
+        }
     }    
     public class ClientRequests
     {     
@@ -60,5 +65,9 @@ namespace ComNet
             public GameRoomInfo gameRoomInfo { get; set; }            
         }
         public class RoomsList { }
+        public class RollDiceRequest
+        {
+            public int diceCount;         
+        }
     }
 }

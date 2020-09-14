@@ -31,19 +31,23 @@ namespace GameServer
                 { (int)ClientPackets.CGameReady, HandleGameReady},
                 { (int)ClientPackets.CAdminMapInfo, HandleMapInfo},
                 { (int)ClientPackets.CCharacterAccepted, HandleCharacterAccepted},
+                { (int)ClientPackets.CRoll, HandleRoll},
             };
+        }
+
+        private void HandleRoll(int index, byte[] data)
+        {
+            TalismanPlayer player = (TalismanPlayer)GetPlayerByIndex(index);
+            ClientRequests.RollDiceRequest request = ServerTCP.GetData<ClientRequests.RollDiceRequest>(data);
+            int rollResult = new Random().Next(1, request.diceCount * 6 + 1);
+            SendToAll(ServerPackets.SRequestResult, new ServerResponds.RollDiceResult() { diceCount = request.diceCount, rollResult = rollResult });
         }
 
         private void HandleCharacterAccepted(int index, byte[] data)
         {
-            Player player = null;
-            for (int i = 0; i < players.Count; i++)
-            {
-                if (players[i].client == ServerTCP.clients[index]) { player = players[i]; break; }
-            }
-            if (player == null) Console.WriteLine("No such client!");
+            TalismanPlayer player = (TalismanPlayer) GetPlayerByIndex(index);
 
-            ((TalismanPlayer)player).characterAccepted = true;
+            player.characterAccepted = true;
 
             bool allReady = true;
             foreach (TalismanPlayer p in players)
@@ -105,6 +109,11 @@ namespace GameServer
         {
             SetPlayerReady(index);
         }
+
+        public override Player GetPlayerByIndex(int index)
+        {
+            return (TalismanPlayer) base.GetPlayerByIndex(index);
+        }
     }
 
     public abstract class GameRoom
@@ -156,7 +165,16 @@ namespace GameServer
 
             if (allReady) Play();
         }
-
+        public virtual Player GetPlayerByIndex(int index)
+        {
+            Player player = null;
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i].client == ServerTCP.clients[index]) { player = players[i]; break; }
+            }
+            if (player == null) { Console.WriteLine("No such client!"); return null; }
+            return player;
+        }
 
 
         public bool IsFull()
