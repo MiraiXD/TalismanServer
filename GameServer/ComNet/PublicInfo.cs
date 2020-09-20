@@ -46,20 +46,24 @@ namespace ComNet
     }
     public class PlayerInfo
     {
+        public ClientInfo clientInfo;
         public int inRoomID;
         public bool isAdmin;
-        public PlayerInfo(int roomID, bool isAdmin)
+        public PlayerInfo(ClientInfo clientInfo, int roomID, bool isAdmin)
         {
+            this.clientInfo = clientInfo;
             this.inRoomID = roomID;
             this.isAdmin = isAdmin;
         }
     }
-    public class TalismanPlayerInfo : PlayerInfo
+    public class TalismanPlayerInfo
     {
         public CharacterInfo characterInfo;
-        public TalismanPlayerInfo(int roomID, bool isAdmin, CharacterInfo characterInfo) : base(roomID, isAdmin)
+        public int rerollsLeft;
+        public TalismanPlayerInfo(CharacterInfo characterInfo, int maxRerolls)
         {
             this.characterInfo = characterInfo;
+            this.rerollsLeft = maxRerolls;
         }
     }
     public class ClientInfo
@@ -85,7 +89,7 @@ namespace ComNet
     // move to TalismanComNet.dll
     public class CharacterInfo
     {
-        public enum Characters { Warrior, Mage }
+        public enum Characters { Barbarian, DarkKnight, Mage, Ogre, Marksman, Warlock, Assassin, Thief }
         
         public CharacterInfo(Characters character, MapTileInfo.MapTiles startingTileType, int maxHealth, int maxStrength, int maxPower)
         {
@@ -106,5 +110,5 @@ namespace ComNet
         public int maxStrength, currentStrength;
         public int maxPower, currentPower;
     }
-
+    
 }

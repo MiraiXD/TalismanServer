@@ -15,8 +15,10 @@ namespace ComNet
         SReplyRoomsList,
         SRequestResult,
         SMapInfo,
-        SGameReady,
-        SCharacterAssignment,
+        SChooseYourCharacter,
+        SRandomCharacter,
+        SPlay,
+        SCharactersAssigned, // possibly unused
         PlayerTurn,
     }
     // gets sent from client to server
@@ -27,7 +29,8 @@ namespace ComNet
         CJoinRoom,
         CGameReady,
         CAdminMapInfo,
-        CCharacterAccepted,
+        CGiveMeRandomCharacter,
+        CCharacterAcceptedAndReadyToPlay,
         CRoll,
     }
 }

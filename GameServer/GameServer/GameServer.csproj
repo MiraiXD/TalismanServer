@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Character.cs" />
     <Compile Include="GameRoom.cs" />
+    <Compile Include="PlayerAction.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerHandleNetworkData.cs" />

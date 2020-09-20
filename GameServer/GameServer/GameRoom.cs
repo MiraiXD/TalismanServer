@@ -2,23 +2,25 @@
 using System.Collections.Generic;
 using System.Text;
 using ComNet;
+using System.Linq;
+
 namespace GameServer
 {
     public class TalismanRoom : GameRoom
     {
         private Player currentPlayerMoving;
         private MapInfo mapInfo;
-        
+        private List<Character> availableCharacters;
         public class TalismanPlayer : Player
         {
             public bool characterAccepted = false;
-            public override PlayerInfo playerInfo { get => _playerInfo; set => _playerInfo = (TalismanPlayerInfo)value; }
-            private TalismanPlayerInfo _playerInfo;
-            public Character character { get { return _character; } set { _character = value; _playerInfo.characterInfo = _character.characterInfo; } }
+            //public override PlayerInfo playerInfo { get => _playerInfo; set => _playerInfo = (TalismanPlayerInfo)value; }
+            public TalismanPlayerInfo talismanPlayerInfo;
+            public Character character { get { return _character; } set { _character = value; talismanPlayerInfo.characterInfo = _character.characterInfo; } }
             private Character _character;
             public TalismanPlayer(Client client, int roomID, bool isAdmin) : base(client, roomID, isAdmin)
-            {
-                playerInfo = new TalismanPlayerInfo(roomID, isAdmin, null);
+            {                
+                talismanPlayerInfo = new TalismanPlayerInfo(null, maxRerolls);
             }
         }
         public TalismanRoom(string name, int maxPlayers) : base(name, maxPlayers) { }
@@ -30,9 +32,33 @@ namespace GameServer
             {
                 { (int)ClientPackets.CGameReady, HandleGameReady},
                 { (int)ClientPackets.CAdminMapInfo, HandleMapInfo},
-                { (int)ClientPackets.CCharacterAccepted, HandleCharacterAccepted},
+                { (int)ClientPackets.CGiveMeRandomCharacter, HandleSendRandomCharacter},
+                { (int)ClientPackets.CCharacterAcceptedAndReadyToPlay, HandleCharacterAccepted},
                 { (int)ClientPackets.CRoll, HandleRoll},
             };
+        }
+        private static object obj = new object();        
+        public const int maxRerolls = 3;
+        private void HandleSendRandomCharacter(int index, byte[] data)
+        {
+            ClientRequests.RandomCharacter request = ServerTCP.GetData<ClientRequests.RandomCharacter>(data);
+            
+            lock (obj)
+            {
+                TalismanPlayer player = (TalismanPlayer)GetPlayerByIndex(index);
+                if (player.talismanPlayerInfo.rerollsLeft > 0)
+                {
+                    player.talismanPlayerInfo.rerollsLeft--;
+
+                    int r = new Random().Next(0, availableCharacters.Count);
+                    Character character = availableCharacters[r];                    
+                    availableCharacters.RemoveAt(r);
+                    if (player.character != null) availableCharacters.Add(player.character);
+                    player.character = character;
+                    Send(index, ServerPackets.SRandomCharacter, new ServerResponds.RandomCharacterResult { characterInfo = character.characterInfo, rerollsLeft = player.talismanPlayerInfo.rerollsLeft });
+                    Console.WriteLine(character.characterInfo.character);
+                }
+            }
         }
 
         private void HandleRoll(int index, byte[] data)
@@ -41,8 +67,7 @@ namespace GameServer
             ClientRequests.RollDiceRequest request = ServerTCP.GetData<ClientRequests.RollDiceRequest>(data);
             int rollResult = new Random().Next(1, request.diceCount * 6 + 1);
             SendToAll(ServerPackets.SRequestResult, new ServerResponds.RollDiceResult() { diceCount = request.diceCount, rollResult = rollResult });
-        }
-
+        }      
         private void HandleCharacterAccepted(int index, byte[] data)
         {
             TalismanPlayer player = (TalismanPlayer) GetPlayerByIndex(index);
@@ -53,7 +78,23 @@ namespace GameServer
             foreach (TalismanPlayer p in players)
                 if (!p.characterAccepted) { allReady = false; break; }
 
-            if (allReady) SetMovingPlayer(players[0]);
+            if (allReady)
+            {
+                ServerResponds.CharactersAssigned charactersAssigned = new ServerResponds.CharactersAssigned();
+                for (int i = 0; i < players.Count; i++)
+                {
+                    TalismanPlayer talismanPlayer = (TalismanPlayer)players[i];
+                    talismanPlayer.character.characterInfo.startingTile = GetTile(mapInfo, talismanPlayer.character.characterInfo.startingTileType);
+                    //charactersAssigned.characters.Add(talismanPlayer.playerInfo, talismanPlayer.character.characterInfo);
+                    charactersAssigned.playerInfos.Add(talismanPlayer.playerInfo);
+                    charactersAssigned.characterInfos.Add(talismanPlayer.character.characterInfo);
+                }
+                //Formatting.Indented
+                SendToAll(ServerPackets.SCharactersAssigned, charactersAssigned);
+
+                SetMovingPlayer(players[0]);
+
+            }
         }
 
         private void HandleMapInfo(int index, byte[] data)
@@ -71,29 +112,31 @@ namespace GameServer
         }
         protected override void Play()
         {
-            SendToAll(ServerPackets.SGameReady);
-            //AssignCharacters();
-            //SetMovingPlayer(players[0]);
-        }
-
-        private void AssignCharacters()
-        {
-            TalismanPlayerInfo[] talismanPlayerInfos = new TalismanPlayerInfo[players.Count];
-            List<Character> characters = new List<Character> { new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior() };
+            availableCharacters = new List<Character>() { new Barbarian(), new DarkKnight()};
             for (int i = 0; i < players.Count; i++)
             {
-                TalismanPlayer player = (TalismanPlayer)players[i];
-                int rand = new Random().Next(0, characters.Count);
-                Character character = characters[rand];
-                characters.RemoveAt(rand);
-
-                character.characterInfo.startingTile = GetTile(mapInfo, character.characterInfo.startingTileType);
-                player.character = character;
-                talismanPlayerInfos[i] = (TalismanPlayerInfo)player.playerInfo;
-            }
-            Console.WriteLine("Assigning characters");
-            SendToAll(ServerPackets.SCharacterAssignment, talismanPlayerInfos);
+                Send(players[i].client.index, ServerPackets.SChooseYourCharacter, ((TalismanPlayer)players[i]).talismanPlayerInfo);
+            }            
         }
+
+        //private void AssignCharacters()
+        //{
+        //    TalismanPlayerInfo[] talismanPlayerInfos = new TalismanPlayerInfo[players.Count];
+        //    List<Character> characters = new List<Character> { new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior(), new Warrior() };
+        //    for (int i = 0; i < players.Count; i++)
+        //    {
+        //        TalismanPlayer player = (TalismanPlayer)players[i];
+        //        int rand = new Random().Next(0, characters.Count);
+        //        Character character = characters[rand];
+        //        characters.RemoveAt(rand);
+
+        //        character.characterInfo.startingTile = GetTile(mapInfo, character.characterInfo.startingTileType);
+        //        player.character = character;
+        //        talismanPlayerInfos[i] = (TalismanPlayerInfo)player.playerInfo;
+        //    }
+        //    Console.WriteLine("Assigning characters");
+        //    SendToAll(ServerPackets.SCharacterAssigned, talismanPlayerInfos);
+        //}
         private MapTileInfo GetTile(MapInfo mapInfo, MapTileInfo.MapTiles tileType)
         {
             foreach (MapTileInfo tileInfo in mapInfo.mapTiles)
@@ -118,7 +161,7 @@ namespace GameServer
         public override Player GetPlayerByIndex(int index)
         {
             return (TalismanPlayer) base.GetPlayerByIndex(index);
-        }
+        }     
     }
 
     public abstract class GameRoom
@@ -146,6 +189,10 @@ namespace GameServer
                 ServerTCP.SendObject(players[i].client.index, packetID, obj);
             }
         }
+        protected void Send(int clientIndex, ServerPackets packetID, object obj = null)
+        {
+            ServerTCP.SendObject(clientIndex, packetID, obj);
+        }
         public virtual PlayerInfo AddClient(Client client, bool isAdmin)
         {
             client.gameRoom = this;
@@ -155,6 +202,7 @@ namespace GameServer
         }
         public void SetPlayerReady(int index)
         {
+            Console.WriteLine("Player ready");
             Player player = null;
             for (int i = 0; i < players.Count; i++)
             {
@@ -189,13 +237,13 @@ namespace GameServer
 
         public abstract class Player
         {
-            public abstract PlayerInfo playerInfo { get; set; }
+            public PlayerInfo playerInfo { get; set; }
             public Client client;
             public bool gameReady = false;
             public Player(Client client, int roomID, bool isAdmin)
             {
                 this.client = client;
-                //this.playerInfo = new PlayerInfo(roomID, isAdmin);
+                this.playerInfo = new PlayerInfo(client.clientInfo, roomID, isAdmin);
             }
         }
 

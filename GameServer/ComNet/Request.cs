@@ -43,6 +43,16 @@ namespace ComNet
             public int diceCount;
             public int rollResult;
         }
+        public class RandomCharacterResult
+        {
+            public CharacterInfo characterInfo;
+            public int rerollsLeft;
+        }
+        public class CharactersAssigned
+        {
+            public List<PlayerInfo> playerInfos = new List<PlayerInfo>();
+            public List<CharacterInfo> characterInfos = new List<CharacterInfo>();
+        }
     }    
     public class ClientRequests
     {     
@@ -69,5 +79,6 @@ namespace ComNet
         {
             public int diceCount;         
         }
+        public class RandomCharacter { }        
     }
 }
