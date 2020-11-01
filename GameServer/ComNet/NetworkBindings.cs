@@ -20,6 +20,7 @@ namespace ComNet
         SPlay,
         SCharactersAssigned, // possibly unused
         PlayerTurn,
+        SRollInfo
     }
     // gets sent from client to server
     public enum ClientPackets
@@ -32,5 +33,6 @@ namespace ComNet
         CGiveMeRandomCharacter,
         CCharacterAcceptedAndReadyToPlay,
         CRoll,
+        CEndOfTurn
     }
 }

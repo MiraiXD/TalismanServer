@@ -41,7 +41,7 @@ namespace ComNet
         }
     }
     public class RollInfo
-    {
+    {        
         public int rollResult;
     }
     public class PlayerInfo

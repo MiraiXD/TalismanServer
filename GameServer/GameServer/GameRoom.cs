@@ -91,7 +91,8 @@ namespace GameServer
                 }
                 //Formatting.Indented
                 SendToAll(ServerPackets.SCharactersAssigned, charactersAssigned);
-
+               
+            
                 SetMovingPlayer(players[0]);
 
             }
